@@ -1136,7 +1136,7 @@ export default function PolydeskV9() {
   useEffect(()=>{
     const fetchMarkets = async () => {
       try {
-        const r = await fetch("https://gamma-api.polymarket.com/markets?active=true&limit=20&order=volume24hr&ascending=false");
+        const r = awaitfetch(`${ORCHESTRATOR_URL}/markets`);
         if(r.ok){ const d = await r.json(); setLiveMarkets(d.slice(0,20)); }
       } catch(e) {}
     };
