@@ -1068,7 +1068,7 @@ export default function PolydeskV9() {
     {id:"D-2",time:"14:53",type:"orchestration_cycle",risk_level:"LOW",assessment:"Maker Rebates Bot running 48 markets, generating ~$4.20 in rebates per hour. Capital slightly below target due to pending fills.",decisions:[{bot:"rebates_bot",action:"continue",reason:"Healthy rebate generation. No adjustments needed."}],opportunities:[]},
     {id:"D-3",time:"14:48",type:"user_command",message:"How much did we make today?",reply:"Total daily P&L: +$47.20. Bond Bot: +$31.50 (2 resolved positions). Maker Rebates: +$15.70 in rebates across 48 markets. BTC5M: paper only. Clean day.",decisions:[]},
   ]);
-  const ORCHESTRATOR_URL = "https://api.gurbcapital.com/api";  // ← update after deploy
+  const ORCHESTRATOR_URL = "https://api.gurbcapital.com";  // ← update after deploy
 
   // ── DEMO BALANCE (persists across tab switches) ───────────────────────────────
   const [demoBalance,    setDemoBalance]    = useState(25000);
