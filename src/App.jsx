@@ -1105,7 +1105,7 @@ export default function PolydeskV9() {
       // Fetch bot states from orchestrator (reads Supabase)
       const [statusR, pmR] = await Promise.allSettled([
         fetch(`${ORCHESTRATOR_URL}/status`, {signal: AbortSignal.timeout(8000)}),
-        fetch("https://gamma-api.polymarket.com/markets?active=true&limit=20&order=volume24hr&ascending=false",
+        fetch(`${ORCHESTRATOR_URL}/markets`,
           {signal: AbortSignal.timeout(8000)}),
       ]);
 
