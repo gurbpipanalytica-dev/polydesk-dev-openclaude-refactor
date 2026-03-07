@@ -67,137 +67,47 @@ const THEMES = {
 };
 
 // ── PNL DATASETS BY PERIOD ────────────────────────────────────────────────────
-const PNL_SETS = {
-  "1D": [
-    {d:"00:00",v:0,c:0},{d:"02:00",v:120,c:120},{d:"04:00",v:-40,c:80},
-    {d:"06:00",v:310,c:390},{d:"08:00",v:-80,c:310},{d:"10:00",v:520,c:830},
-    {d:"12:00",v:180,c:1010},{d:"14:00",v:640,c:1650},{d:"16:00",v:-120,c:1530},
-    {d:"18:00",v:290,c:1820},{d:"20:00",v:380,c:2200},{d:"Now",v:0,c:2200},
-  ],
-  "7D": [
-    {d:"Mon",v:1200,c:1200},{d:"Tue",v:-300,c:900},{d:"Wed",v:2800,c:3700},
-    {d:"Thu",v:1100,c:4800},{d:"Fri",v:-600,c:4200},{d:"Sat",v:1800,c:6000},{d:"Sun",v:2100,c:8100},
-  ],
-  "1M": [
-    {d:"Feb 1",v:1200,c:1200},{d:"Feb 3",v:-300,c:900},{d:"Feb 5",v:2800,c:3700},
-    {d:"Feb 7",v:1100,c:4800},{d:"Feb 9",v:-600,c:4200},{d:"Feb 11",v:3400,c:7600},
-    {d:"Feb 13",v:2100,c:9700},{d:"Feb 15",v:-900,c:8800},{d:"Feb 17",v:4200,c:13000},
-    {d:"Feb 19",v:1800,c:14800},{d:"Feb 21",v:3100,c:17900},{d:"Feb 22",v:2200,c:20100},
-  ],
-  "3M": [
-    {d:"Dec 1",v:800,c:800},{d:"Dec 15",v:2100,c:2900},{d:"Jan 1",v:-400,c:2500},
-    {d:"Jan 8",v:3200,c:5700},{d:"Jan 15",v:1800,c:7500},{d:"Jan 22",v:-800,c:6700},
-    {d:"Feb 1",v:4100,c:10800},{d:"Feb 8",v:2800,c:13600},{d:"Feb 15",v:-900,c:12700},
-    {d:"Feb 22",v:7400,c:20100},
-  ],
-  "ALL": [
-    {d:"Sep",v:1200,c:1200},{d:"Oct",v:3400,c:4600},{d:"Nov",v:-800,c:3800},
-    {d:"Dec",v:4200,c:8000},{d:"Jan",v:6100,c:14100},{d:"Feb",v:6000,c:20100},
-  ],
-};
+// [REMOVED] PNL_SETS — replaced by buildChartData() from real Supabase trades
 
-const PNL_META = {
-  "1D":  {total:"+$2,200",  pct:"+8.8%",   sharpe:"1.84", drawdown:"-3.6%", streak:7},
-  "7D":  {total:"+$8,100",  pct:"+32.4%",  sharpe:"2.11", drawdown:"-7.1%", streak:7},
-  "1M":  {total:"+$20,100", pct:"+80.4%",  sharpe:"2.43", drawdown:"-9.2%", streak:7},
-  "3M":  {total:"+$20,100", pct:"+100.5%", sharpe:"2.18", drawdown:"-12.4%",streak:14},
-  "ALL": {total:"+$20,100", pct:"+201.0%", sharpe:"1.97", drawdown:"-15.8%",streak:14},
-};
+// [REMOVED] PNL_META — replaced by buildMeta() from real Supabase trades
 
-const LATENCY = [
-  {t:"00:00",ms:12},{t:"03:00",ms:9},{t:"06:00",ms:11},
-  {t:"09:00",ms:38},{t:"12:00",ms:44},{t:"15:00",ms:29},
-  {t:"18:00",ms:18},{t:"21:00",ms:10},{t:"Now",ms:8},
-];
+// [REMOVED] LATENCY — replaced by latencyData computed from real allTrades
 
 // ── HEATMAP DATA (hour x day, profit intensity) ───────────────────────────────
 const HEATMAP = {
   days:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
   hours:["00","02","04","06","08","10","12","14","16","18","20","22"],
   data: [
-    [0,0,10,20,80,120,200,340,180,90,40,10],
-    [0,0,0, 30,90,210,280,420,310,140,60,20],
-    [10,0,20,10,70,180,320,280,190,80,30,0],
-    [0,0,0, 40,110,160,240,390,260,110,50,10],
-    [0,10,0,20,60,190,310,450,280,130,70,20],
-    [0,0,0, 0, 20,80, 140,200,160,90, 40,10],
-    [0,0,0, 0, 10,40, 90, 130,100,50, 20,0 ],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
   ],
 };
+// TODO: Build from real trade timestamps when enough trades exist
 
 // ── MARKET CATEGORY DATA ──────────────────────────────────────────────────────
-const CATEGORIES = [
-  {name:"Crypto",      trades:2840, pnl:12400, winRate:87, color:"#f59e0b"},
-  {name:"Politics",    trades:1102, pnl:5800,  winRate:71, color:"#8b5cf6"},
-  {name:"Esports",     trades:291,  pnl:3890,  winRate:88, color:"#3b82f6"},
-  {name:"Finance",     trades:488,  pnl:1800,  winRate:63, color:"#10b981"},
-  {name:"Other",       trades:121,  pnl:-1790, winRate:38, color:"#ef4444"},
-];
+// [REMOVED] CATEGORIES — replaced by buildCategories() from real trades
 
 // ── BOT COMPARISON ────────────────────────────────────────────────────────────
-const BOT_COMPARE = [
-  {bot:"Bond Bot",      pnl:9840, winRate:98.1, trades:284,  sharpe:3.4, drawdown:1.2},
-  {bot:"Maker Rebates", pnl:5110, winRate:81.7, trades:3204, sharpe:2.1, drawdown:8.4},
-  {bot:"BTC 5-Min",     pnl:3240, winRate:71.4, trades:147,  sharpe:1.9, drawdown:9.8},
-  {bot:"Whale Mirror",  pnl:4280, winRate:67.3, trades:412,  sharpe:1.7, drawdown:11.2},
-  {bot:"Esports Oracle",pnl:0,    winRate:0,    trades:0,    sharpe:0,   drawdown:0},
-];
+// [REMOVED] BOT_COMPARE — derived from real calcBotStats()
 
-const COPIER_COMPARE = [
-  {wallet:"TeemuTeemuTeemu", pnl:0, winRate:57.0, trades:0, method:"Esports Lag",    copySize:0, color:"#10b981", confirmed:false},
-  {wallet:"Account88888",    pnl:0, winRate:53.9, trades:0, method:"BTC Direction",  copySize:0, color:"#3b82f6", confirmed:false},
-  {wallet:"kingofcoinflips", pnl:0, winRate:57.3, trades:0, method:"BTC Direction",  copySize:0.7, color:"#8b5cf6", confirmed:true},
-  {wallet:"defiance_cr",     pnl:0, winRate:null, trades:0, method:"MM Signal Only", copySize:0, color:"#f59e0b", confirmed:false},
-  {wallet:"gabagool",        pnl:0, winRate:null, trades:0, method:"Study Only",     copySize:0, color:"#64748b", confirmed:false},
-];
+// [REMOVED] COPIER_COMPARE — derived from copyPnlByWallet
 
 const BOTS = [
-  {id:1,name:"Bond Bot",       file:"polydesk_bond_bot.py",    strategy:"Bond / Near-Certainty", status:"live",  pnl:9840, pct:49.2,win:98.1,trades:284, ping:9, exec:28,rate:42,color:"#10b981"},
-  {id:2,name:"Maker Rebates",  file:"polydesk_maker_rebates_bot.py", strategy:"Market Making",  status:"live",  pnl:5110, pct:25.6,win:81.7,trades:3204,ping:12,exec:38,rate:88,color:"#3b82f6"},
-  {id:3,name:"BTC 5-Min Bot",  file:"polydesk_btc5m_bot.py",   strategy:"Chainlink Lag + Gabagool",status:"live", pnl:3240, pct:16.2,win:71.4,trades:147, ping:7, exec:22,rate:61,color:"#8b5cf6"},
-  {id:4,name:"Whale Mirror",   file:"copier_tab",               strategy:"Copy Trading",          status:"paused",pnl:4280, pct:21.4,win:67.3,trades:412, ping:14,exec:44,rate:0, color:"#f59e0b"},
+  {id:1,name:"Bond Bot",       file:"polydesk_bond_bot.py",    strategy:"Bond / Near-Certainty", status:"live",  pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#10b981"},
+  {id:2,name:"Maker Rebates",  file:"polydesk_maker_rebates_bot.py", strategy:"Market Making",  status:"live",  pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#3b82f6"},
+  {id:3,name:"BTC 5-Min Bot",  file:"polydesk_btc5m_bot.py",   strategy:"Chainlink Lag + Gabagool",status:"live", pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#8b5cf6"},
+  {id:4,name:"Whale Mirror",   file:"copier_tab",               strategy:"Copy Trading",          status:"paused",pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0, color:"#f59e0b"},
   {id:5,name:"Esports Oracle", file:"—",                        strategy:"Live Data Lag",         status:"planned",pnl:0,   pct:0,   win:0,   trades:0,   ping:0, exec:0, rate:0, color:"#64748b"},
 ];
 
-const TRADE_LOGS = {
-  1:[
-    {id:"T-284", time:"Feb 26 09:14",market:"BTC resolution > 99c",       side:"YES",size:5000,entry:0.97,exit:1.00,pnl:+150, execMs:28,status:"closed"},
-    {id:"T-283", time:"Feb 26 06:31",market:"Fed rate hold — near certain", side:"YES",size:4800,entry:0.96,exit:1.00,pnl:+192, execMs:31,status:"closed"},
-    {id:"T-282", time:"Feb 25 22:10",market:"ETH > $3k — high prob",        side:"YES",size:3200,entry:0.94,exit:1.00,pnl:+192, execMs:29,status:"closed"},
-    {id:"T-LIVE",time:"Feb 26 14:58",market:"BTC > $88k by Feb 28",         side:"YES",size:5000,entry:0.97,exit:null, pnl:null, execMs:28,status:"open"},
-  ],
-  2:[
-    {id:"R-3204",time:"Feb 26 14:55",market:"BTC dominance > 60%",       side:"MM", size:200,entry:0.48,exit:0.52,pnl:+28, execMs:38,status:"closed"},
-    {id:"R-3203",time:"Feb 26 14:47",market:"CPI < 3% in Feb",            side:"MM", size:200,entry:0.50,exit:0.50,pnl:+4,  execMs:41,status:"closed"},
-    {id:"R-3202",time:"Feb 26 14:31",market:"Fed rate cut in March",       side:"MM", size:200,entry:0.34,exit:0.34,pnl:+4,  execMs:36,status:"closed"},
-    {id:"R-LIVE",time:"Feb 26 15:03",market:"ETH > $3k by Mar 10",         side:"MM", size:200,entry:0.50,exit:null, pnl:null, execMs:38,status:"open"},
-  ],
-  3:[
-    {id:"B-147", time:"Feb 26 14:48",market:"BTC 5-min UP — 14:45 window",side:"YES",size:150,entry:0.62,exit:1.00,pnl:+57, execMs:22,status:"closed"},
-    {id:"B-146", time:"Feb 26 14:33",market:"BTC 5-min UP — 14:30 window",side:"YES",size:150,entry:0.55,exit:0.52,pnl:-5,  execMs:19,status:"closed"},
-    {id:"B-145", time:"Feb 26 14:18",market:"BTC 5-min DN — 14:15 window",side:"NO", size:150,entry:0.58,exit:1.00,pnl:+63, execMs:24,status:"closed"},
-    {id:"B-LIVE",time:"Feb 26 15:01",market:"BTC 5-min UP — 15:00 window",side:"YES",size:150,entry:0.61,exit:null, pnl:null, execMs:22,status:"open"},
-  ],
-  4:[
-    {id:"T-291", time:"Feb 18 21:10",market:"Team Liquid wins ESL",   side:"YES",size:3000,entry:0.34,exit:0.98,pnl:+1920,execMs:52,status:"closed"},
-    {id:"T-290", time:"Feb 17 18:45",market:"G2 beats NaVi",          side:"NO", size:2500,entry:0.41,exit:0.08,pnl:+825, execMs:55,status:"closed"},
-  ],
-  5:[
-    {id:"T-88",  time:"Feb 22 10:00",market:"Trump signs EO on crypto",side:"YES",size:3000,entry:0.45,exit:0.22,pnl:-690,execMs:67,status:"closed"},
-    {id:"T-LIVE",time:"Feb 22 15:00",market:"Inflation < 3% in Feb",   side:"YES",size:1200,entry:0.51,exit:null, pnl:null, execMs:67,status:"open"},
-  ],
-};
+// [REMOVED] TRADE_LOGS — TradeDrawer fetches from /trades API
 
-const TXNS = [
-  {id:"TX-009",type:"profit",  desc:"Arb Alpha — trade T-1847",  amount:+1584,time:"Feb 22 14:33",status:"confirmed"},
-  {id:"TX-008",type:"profit",  desc:"MM Reaper — trade T-3204",  amount:+72,  time:"Feb 22 14:56",status:"confirmed"},
-  {id:"TX-007",type:"withdraw",desc:"Withdrawal to 0x8f...3a2e", amount:-2000,time:"Feb 22 10:00",status:"confirmed"},
-  {id:"TX-006",type:"profit",  desc:"Arb Alpha — trade T-1846",  amount:+928, time:"Feb 22 11:19",status:"confirmed"},
-  {id:"TX-005",type:"deposit", desc:"Deposit from 0x3d...91ff",  amount:+5000,time:"Feb 21 09:00",status:"confirmed"},
-  {id:"TX-004",type:"loss",    desc:"AI Ensemble — trade T-88",  amount:-690, time:"Feb 22 10:01",status:"confirmed"},
-  {id:"TX-003",type:"profit",  desc:"Whale Mirror — trade T-412",amount:+2800,time:"Feb 22 13:45",status:"confirmed"},
-  {id:"TX-002",type:"deposit", desc:"Deposit from 0x3d...91ff",  amount:+10000,time:"Feb 20 08:00",status:"confirmed"},
-];
+// [REMOVED] TXNS — FundsTab fetches real transactions from orchestrator
 
 // ── STRATEGY ROADMAP DATA ─────────────────────────────────────────────────────
 const STRATEGY_TIERS = [
@@ -264,63 +174,34 @@ const TRACKED_WALLETS = [
   {id:"w1", handle:"TeemuTeemuTeemu", allTimePnl:230312, winRate:57.0, biggestWin:89032,
    focus:"Dota2 / LoL Esports", trades:412, copyable:true, confidence:"HIGH",
    pattern:"Enters esports markets 5–30s after major in-game events via live data feed. High win rate on team fight outcomes and baron/dragon spawns.",
-   recentTrades:[
-     {market:"Liquid vs NaVi ESL map 3",side:"YES",entry:0.34,current:0.91,pnl:2860,status:"open"},
-     {market:"G2 wins IEM Katowice",    side:"NO", entry:0.58,current:0.09,pnl:1610,status:"closed"},
-     {market:"EG beats Fnatic",         side:"YES",entry:0.41,current:1.00,pnl:2115,status:"resolved"},
-   ],
+   recentTrades:[],
    color:"#10b981"},
   {id:"w2", handle:"Account88888", allTimePnl:645489, winRate:53.9, biggestWin:null,
    focus:"BTC / ETH Price Markets", trades:8841, copyable:true, confidence:"MEDIUM",
    pattern:"Trades BTC/ETH direction markets heavily. Most likely a professional crypto trader using technical analysis. Consistent 53.9% win rate over 8,000+ trades — not luck.",
-   recentTrades:[
-     {market:"BTC > $97k by Mar 1",   side:"NO", entry:0.62,current:0.71,pnl:-180,status:"open"},
-     {market:"BTC > $95k by Feb 28",  side:"YES",entry:0.74,current:1.00,pnl:1040,status:"resolved"},
-     {market:"ETH > $3.2k by Feb 28", side:"NO", entry:0.44,current:0.08,pnl:900, status:"resolved"},
-   ],
+   recentTrades:[],
    color:"#3b82f6"},
   {id:"w3", handle:"kingofcoinflips", address:"0xe9c6312464b52aa3eff13d822b003282075995c9", allTimePnl:697083, winRate:57.3, biggestWin:null,
    focus:"BTC / ETH Price Markets", trades:6120, copyable:true, confidence:"MEDIUM",
    pattern:"Similar to Account88888 but slightly higher win rate. Likely uses on-chain flow data to detect large BTC purchases before price moves. Often enters 2–5 minutes before large moves.",
-   recentTrades:[
-     {market:"BTC > $96k by Mar 5",   side:"YES",entry:0.58,current:0.67,pnl:310, status:"open"},
-     {market:"ETH > $3k by Feb 28",   side:"YES",entry:0.71,current:1.00,pnl:1160,status:"resolved"},
-   ],
+   recentTrades:[],
    color:"#8b5cf6"},
   {id:"w4", handle:"defiance_cr", allTimePnl:null, winRate:null, biggestWin:null,
    focus:"Market Making", trades:null, copyable:false, confidence:"SIGNAL",
    pattern:"Open-source market maker (warproxxx/poly-maker). Doesn't trade direction — posts two-sided limit orders. Follow for WHICH markets are liquid enough to MM profitably, not for directional signals.",
-   recentTrades:[
-     {market:"BTC dominance > 60%",   side:"MM",entry:0.48,current:null,pnl:180,status:"open"},
-     {market:"Fed rate cut in March",  side:"MM",entry:0.50,current:null,pnl:240,status:"open"},
-   ],
+   recentTrades:[],
    color:"#f59e0b"},
   {id:"w5", handle:"gabagool (arb bot)", allTimePnl:null, winRate:99.1, biggestWin:null,
    focus:"Combinatorial Arb", trades:47000, copyable:false, confidence:"STUDY",
    pattern:"Pure math bot — buys YES+NO mispricings in multi-outcome markets. $40M+ in arb profits. NOT copyable (HFT speed required) but study which markets it targets to find arb-friendly markets.",
-   recentTrades:[
-     {market:"2028 election NegRisk",  side:"ARB",entry:0.97,current:1.00,pnl:58, status:"resolved"},
-   ],
+   recentTrades:[],
    color:"#ef4444"},
 ];
 
 // ── MAKER REBATES DATA ─────────────────────────────────────────────────────────
-const REBATE_MARKETS = [
-  {market:"BTC > $95k by Mar 15",  spread:0.04, volume:142000, myOrders:2, dailyRebate:28, status:"active"},
-  {market:"ETH > $3k by Mar 10",   spread:0.03, volume:98000,  myOrders:2, dailyRebate:19, status:"active"},
-  {market:"Fed rate cut in March",  spread:0.05, volume:211000, myOrders:2, dailyRebate:42, status:"active"},
-  {market:"BTC dominance > 60%",   spread:0.04, volume:87000,  myOrders:2, dailyRebate:17, status:"active"},
-  {market:"Trump signs EO crypto",  spread:0.06, volume:64000,  myOrders:2, dailyRebate:15, status:"paused"},
-  {market:"CPI < 3% in Feb",       spread:0.05, volume:178000, myOrders:2, dailyRebate:35, status:"active"},
-];
+const REBATE_MARKETS = []; // Populated from rebates bot state when available
 
-const ALLOC_LIVE = [
-  {bot:"Arb Alpha",    alloc:4000,color:"#10b981"},
-  {bot:"MM Reaper",    alloc:3000,color:"#3b82f6"},
-  {bot:"Whale Mirror", alloc:2500,color:"#8b5cf6"},
-  {bot:"Esports Oracle",alloc:1500,color:"#f59e0b"},
-  {bot:"AI Ensemble",  alloc:1440,color:"#ef4444"},
-];
+// [REMOVED] ALLOC_LIVE — allocations read from Supabase table
 
 const PIE_C = ["#00C87A","#4C9EEB","#9B87F5","#F5A623","#F05C5C"];
 
