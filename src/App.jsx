@@ -103,7 +103,6 @@ const BOTS = [
   {id:3,name:"BTC 5-Min Bot",  file:"polydesk_btc5m_bot.py",   strategy:"Chainlink Lag + Gabagool",status:"live", pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#8b5cf6"},
   {id:4,name:"Whale Mirror",   file:"copier_tab",               strategy:"Copy Trading",          status:"paused",pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0, color:"#f59e0b"},
   {id:5,name:"Esports Oracle", file:"—",                        strategy:"Live Data Lag",         status:"planned",pnl:0,   pct:0,   win:0,   trades:0,   ping:0, exec:0, rate:0, color:"#64748b"},
-  {id:6,name:"Pipeline Test",  file:"polydesk_test_bot.py",     strategy:"Pipeline Stress Test",  status:"live",   pnl:0,   pct:0,   win:0,   trades:0,   ping:0, exec:0, rate:0, color:"#06b6d4"},
 ];
 
 // [REMOVED] TRADE_LOGS — TradeDrawer fetches from /trades API
@@ -1285,7 +1284,7 @@ const StrategyDrawer = ({strategy, onClose, allTrades, liveData, botsRegistry, B
   }[strategy.status] || {label:strategy.status, color:B.muted, bg:B.surf2};
 
   const botStates  = liveData?.portfolio?.bot_states || {};
-  const BOT_KEY_MAP = {"polydesk_bond_bot.py":"bond_bot","maker_rebates_bot.py":"rebates_bot","polydesk_btc5m_bot.py":"btc5m_bot","polydesk_test_bot.py":"test_bot"};
+  const BOT_KEY_MAP = {"polydesk_bond_bot.py":"bond_bot","maker_rebates_bot.py":"rebates_bot","polydesk_btc5m_bot.py":"btc5m_bot"};
   const vpsKey     = BOT_KEY_MAP[strategy.botName];
   const vpsState   = vpsKey ? botStates[vpsKey] : null;
   const isRunning  = vpsState?.status==="paper"||vpsState?.status==="live";
@@ -2293,7 +2292,7 @@ export default function PolydeskV12() {
     };
   };
 
-  const BOT_KEY_MAP = ["bond_bot","rebates_bot","btc5m_bot","copier_bot","esports_bot","test_bot"];
+  const BOT_KEY_MAP = ["bond_bot","rebates_bot","btc5m_bot","copier_bot","esports_bot"];
 
   // ── REAL CHART DATA — built from allTrades ──────────────────────────────────
   const buildChartData = (trades, per) => {
@@ -2700,7 +2699,7 @@ export default function PolydeskV12() {
   }, []);
 
   // Helper: get bot data — live from API or mock from BOTS array
-    const botKeyMap = ["bond_bot","rebates_bot","btc5m_bot","copier_bot","esports_bot","test_bot"];
+    const botKeyMap = ["bond_bot","rebates_bot","btc5m_bot","copier_bot","esports_bot"];
   const getBotData = (botIndex) => {
     const key  = BOT_KEY_MAP[botIndex];
     const base = BOTS[botIndex];
