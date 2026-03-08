@@ -2687,6 +2687,18 @@ export default function PolydeskV12() {
     return () => clearInterval(interval);
   }, [mode]);
 
+  // Load demo balance from Supabase on mount (so header shows correct balance immediately)
+  useEffect(() => {
+    fetch(`${ORCHESTRATOR_BASE}/app-state?key=demo_balance`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if(d?.value != null) setDemoBalance(parseFloat(d.value)); })
+      .catch(() => {});
+    fetch(`${ORCHESTRATOR_BASE}/app-state?key=demo_txns`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if(d?.value?.length > 0) setDemoTxns(d.value); })
+      .catch(() => {});
+  }, []);
+
   // Helper: get bot data — live from API or mock from BOTS array
     const botKeyMap = ["bond_bot","rebates_bot","btc5m_bot","copier_bot","esports_bot","test_bot"];
   const getBotData = (botIndex) => {
