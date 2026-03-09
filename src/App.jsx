@@ -8,7 +8,7 @@ import {
 } from "recharts";
 
 // ── GLOBAL CONSTANTS ─────────────────────────────────────────────────────────
-const TOTAL_CAPITAL_USD   = 450;
+// TOTAL_CAPITAL_USD removed — use demoBalance (demo) or walletBalance (live) everywhere
 const SUPABASE_URL        = "https://dwpqvhmdiaimfphdzmpc.supabase.co";
 const SUPABASE_ANON_KEY   = "sb_publishable_uY0g2jvzpE9xwAsaOEDjmw_A9y_de-6";
 const ORCHESTRATOR_BASE   = "https://api.gurbcapital.com";
@@ -100,7 +100,7 @@ const HEATMAP = {
 const BOTS = [
   {id:1,name:"Bond Bot",       file:"polydesk_bond_bot.py",    strategy:"Bond / Near-Certainty", status:"live",  pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#10b981"},
   {id:2,name:"Maker Rebates",  file:"polydesk_maker_rebates_bot.py", strategy:"Market Making",  status:"live",  pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#3b82f6"},
-  {id:3,name:"BTC 5-Min Bot",  file:"polydesk_btc5m_bot.py",   strategy:"Chainlink Lag + Gabagool",status:"live", pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#8b5cf6"},
+  {id:3,name:"BTC 5-Min Bot",  file:"polydesk_btc5m_bot.py",   strategy:"OFI + Gabagool (T1/T2/T3)",status:"live", pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0,color:"#8b5cf6"},
   {id:4,name:"Whale Mirror",   file:"copier_tab",               strategy:"Copy Trading",          status:"paused",pnl:0, pct:0,win:0,trades:0, ping:0, exec:0,rate:0, color:"#f59e0b"},
   {id:5,name:"Esports Oracle", file:"—",                        strategy:"Live Data Lag",         status:"planned",pnl:0,   pct:0,   win:0,   trades:0,   ping:0, exec:0, rate:0, color:"#64748b"},
 ];
@@ -127,7 +127,7 @@ const STRATEGY_TIERS = [
     strategies:[
       {name:"Sports Market Making",  desc:"Quote spreads around Pinnacle vig-free odds, earn the middle",         status:"in_dev",  return:"$60K+/mo",    botName:"ent0n29/polybot",        difficulty:"Medium"},
       {name:"Sportsbook Arb",        desc:"Buy cheap side on Polymarket, hedge on Pinnacle, lock guaranteed spread",status:"in_dev", return:"12–20%/mo",  botName:"ent0n29/polybot",        difficulty:"Medium"},
-      {name:"5-Min BTC Chainlink",   desc:"Read Chainlink oracle 2–15 seconds before Polymarket reprices",        status:"built",   return:"15–30%/mo",   botName:"polydesk_btc5m_bot.py",  difficulty:"Med-High"},
+      {name:"5-Min BTC OFI",         desc:"Binance order flow imbalance + liquidation cascade detection, 4-tier signal system",status:"built",return:"15–30%/mo",botName:"polydesk_btc5m_bot.py",difficulty:"Med-High"},
       {name:"Correlated/Logical Arb",desc:"Trump wins (35%) floors Republican wins — scan relationship violations",status:"in_dev",  return:"2–5%/mo",     botName:"dylanpersonguy/bot",     difficulty:"Medium"},
       {name:"Esports Live-Data Lag", desc:"Riot Games API kills/objectives 5–30s before Polymarket updates",      status:"in_dev",  return:"$90K/event",  botName:"Custom (STRATZ+Riot)",  difficulty:"Med-High"},
     ]
@@ -601,6 +601,12 @@ const AllocateTab = ({balance, available, totalAllocated, isDemo, botsRegistry=[
       const payload = Object.fromEntries(allocData.map(a=>[a.id, a.amount]));
       // Update parent allocations state
       setBotAllocations(payload);
+      // Persist allocations to app-state for reload persistence
+      try {
+        const allocMap = {};
+        payload.forEach(p => { allocMap[p.bot_id] = p.amount_usd; });
+        await fetch(`${ORCHESTRATOR_BASE}/app-state`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"demo_allocations",value:allocMap})});
+      } catch(e){}
       await fetch(`${ORCHESTRATOR_BASE}/allocations`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({allocations: payload})
@@ -827,7 +833,7 @@ const AllocateTab = ({balance, available, totalAllocated, isDemo, botsRegistry=[
   );
 };
 
-const FundsTab = ({mode, demoBalance, setDemoBalance, demoTxns, setDemoTxns, demoAllocated, walletBalance, walletAddress, liveData, botsRegistry=[], botAllocations={}, setBotAllocations=()=>{}}) => {
+const FundsTab = ({mode, demoBalance, setDemoBalance, demoTxns, setDemoTxns, demoAllocated, walletBalance, walletAddress, liveData, botsRegistry=[], botAllocations={}, setBotAllocations=()=>{}, onResetAll=()=>{}}) => {
   const {B,T} = useTheme();
   const [tab,setTab]           = useState("overview");
   const [withdrawAddr,setWA]   = useState("");
@@ -851,8 +857,12 @@ const FundsTab = ({mode, demoBalance, setDemoBalance, demoTxns, setDemoTxns, dem
 
   // P&L: demo = gains above total deposited; live = from orchestrator
   const totalDeposited = (demoTxns||[]).filter(t=>t.type==="deposit").reduce((s,t)=>s+t.amount, 0);
+  // Real P&L from all closed trades (positive or negative)
+  const tradePnl = isDemo
+    ? (typeof window !== "undefined" ? 0 : 0) // will be computed from allTrades prop
+    : (liveData?.portfolio?.total_pnl || 0);
   const realPnl = isDemo
-    ? Math.max(0, balance - totalDeposited)
+    ? (balance - totalDeposited)
     : (liveData?.portfolio?.total_pnl || 0);
 
   // Balance health
@@ -947,6 +957,12 @@ const FundsTab = ({mode, demoBalance, setDemoBalance, demoTxns, setDemoTxns, dem
               {isLow&&<div style={{background:B.amberSoft,border:`1px solid ${B.amber}30`,borderRadius:8,padding:"6px 12px",fontSize:11,color:B.amber,fontWeight:600}}>⚠ Very low balance</div>}
               {isWarning&&<div style={{background:B.amberSoft,border:`1px solid ${B.amber}20`,borderRadius:8,padding:"6px 12px",fontSize:11,color:B.amber}}>↓ Consider topping up</div>}
               {isDemo&&balance===0&&<div style={{background:B.blueSoft,border:`1px solid ${B.blue}20`,borderRadius:8,padding:"6px 12px",fontSize:11,color:B.blue}}>Add paper funds to start</div>}
+              {isDemo&&balance>0&&(
+                <button onClick={()=>onResetAll()}
+                  style={{background:B.redSoft,border:`1px solid ${B.red}30`,borderRadius:8,padding:"6px 12px",fontSize:10,color:B.red,fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif",letterSpacing:"0.04em"}}>
+                  🗑 Reset All
+                </button>
+              )}
             </div>
           </div>
 
@@ -2224,6 +2240,10 @@ const AddBotModal = ({onAdd, onClose, existingIds}) => {
 
 export default function PolydeskV12() {
   const [mode,setMode]         = useState("demo");
+  const [liveWalletModal, setLiveWalletModal] = useState(false);
+  const [liveWalletInput, setLiveWalletInput] = useState("");
+  const [allocConfirm, setAllocConfirm]       = useState(null); // {botId, oldAmt, newAmt, onConfirm}
+  const [resetConfirm,  setResetConfirm]      = useState(false);
   const [page,setPage]         = useState("overview");
   const [period,setPeriod]     = useState("1M");
   const [customRange,setCR]    = useState({from:"2026-01-01",to:"2026-02-22"});
@@ -2236,12 +2256,22 @@ export default function PolydeskV12() {
   const [darkMode,setDarkMode] = useState(true);
   const [toasts,setToasts]     = useState([]);
 
+  // Intercept mode change — live needs wallet address first
+  const handleModeChange = (newMode) => {
+    if(newMode === "live" && !walletAddress) {
+      setLiveWalletInput("");
+      setLiveWalletModal(true);
+    } else {
+      setMode(newMode);
+    }
+  };
+
   // ── V12: DYNAMIC BOTS REGISTRY ──────────────────────────────────────────────
   const [botsRegistry, setBotsRegistry] = useState([...BOTS]);
   const [showAddBotModal, setShowAddBotModal] = useState(false);
   const [botAllocations, setBotAllocations] = useState({
-    1: 351, 2: 99, 3: 0, 4: 0, 5: 0,
-  }); // botId -> allocated amount
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
+  }); // botId -> allocated amount — starts at 0, user must set
 
   // Color tokens based on dark/light mode
   const B = darkMode ? DARK : LIGHT;
@@ -2374,7 +2404,7 @@ export default function PolydeskV12() {
         else streak = 0;
       });
 
-    const pct = TOTAL_CAPITAL_USD > 0 ? (totalPnl/TOTAL_CAPITAL_USD*100) : 0;
+    const pct = 0; // pct shown separately relative to user balance
     return {
       total: fmt.pnl(totalPnl),
       pct:   fmt.pct(pct),
@@ -2456,6 +2486,20 @@ export default function PolydeskV12() {
       toast(`Wallet check failed: ${e.message}`, "error");
     }
     setWalletChecking(false);
+  };
+
+  // Reset all demo data
+  const handleResetAll = async () => {
+    setDemoBalance(0);
+    setDemoTxns([]);
+    setBotAllocations({1:0,2:0,3:0,4:0,5:0});
+    setAllTrades([]);
+    try {
+      await fetch(`${ORCHESTRATOR_BASE}/app-state`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"demo_balance",value:0})});
+      await fetch(`${ORCHESTRATOR_BASE}/app-state`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"demo_txns",value:[]})});
+      await fetch(`${ORCHESTRATOR_BASE}/app-state`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"demo_allocations",value:{}})});
+    } catch(e){}
+    toast("✅ All data reset", "success");
   };
 
   // Save config to orchestrator
@@ -2696,6 +2740,10 @@ export default function PolydeskV12() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if(d?.value?.length > 0) setDemoTxns(d.value); })
       .catch(() => {});
+    fetch(`${ORCHESTRATOR_BASE}/app-state?key=demo_allocations`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if(d?.value && typeof d.value === "object") setBotAllocations(prev=>({...prev,...d.value})); })
+      .catch(() => {});
   }, []);
 
   // Helper: get bot data — live from API or mock from BOTS array
@@ -2719,9 +2767,9 @@ export default function PolydeskV12() {
         exec:       base?.exec || 35,
         updatedAt:  s?.updated_at,
         scanCount:  s?.scan_count || 0,
-        pct: realStats?.pnl != null && TOTAL_CAPITAL_USD > 0
-          ? parseFloat(((realStats.pnl / TOTAL_CAPITAL_USD) * 100).toFixed(1))
-          : base.pct,
+        pct: realStats?.pnl != null && botAllocations[botIndex+1] > 0
+          ? parseFloat(((realStats.pnl / botAllocations[botIndex+1]) * 100).toFixed(1))
+          : 0,
       };
     }
     // Demo mode — same real data, capital is simulated
@@ -2737,8 +2785,8 @@ export default function PolydeskV12() {
       ping:        base?.ping || 12,
       exec:        base?.exec || 35,
       scanCount:   s?.scan_count || 0,
-      pct: realStats?.pnl != null && TOTAL_CAPITAL_USD > 0
-        ? parseFloat(((realStats.pnl / TOTAL_CAPITAL_USD) * 100).toFixed(1))
+      pct: realStats?.pnl != null && botAllocations[botIndex+1] > 0
+        ? parseFloat(((realStats.pnl / botAllocations[botIndex+1]) * 100).toFixed(1))
         : 0,
     };
   };
@@ -2750,11 +2798,11 @@ export default function PolydeskV12() {
         totalPnl:    p.total_daily_pnl || 0,
         activeBots:  Object.values(p.bot_states||{}).filter(b=>b.status==="paper"||b.status==="live").length,
         totalTrades: p.total_trades_today || 0,
-        capital:     p.total_capital || TOTAL_CAPITAL_USD,
+        capital:     p.total_capital || 0,
         totalRebates: p.total_rebates || 0,
       };
       // Live mode no data yet
-      return { totalPnl:0, activeBots:0, totalTrades:0, capital:TOTAL_CAPITAL_USD, totalRebates:0 };
+      return { totalPnl:0, activeBots:0, totalTrades:0, capital:0, totalRebates:0 };
     }
     // Demo mode — use real bot activity data, just with simulated capital
     const p = liveData?.portfolio;
@@ -2762,7 +2810,7 @@ export default function PolydeskV12() {
       totalPnl:    allTrades.filter(t=>t.pnl!=null).reduce((s,t)=>s+(t.pnl||0),0),
       activeBots:  Object.values(p.bot_states||{}).filter(b=>b.status==="paper"||b.status==="live").length,
       totalTrades: allTrades.length,
-      capital:     TOTAL_CAPITAL_USD,
+      capital:     0,
       totalRebates: 0,
     };
     // No data fetched yet — genuine zeros, not mock
@@ -2770,7 +2818,7 @@ export default function PolydeskV12() {
       totalPnl:    allTrades.filter(t=>t.pnl!=null).reduce((s,t)=>s+(t.pnl||0),0),
       activeBots:  0,
       totalTrades: allTrades.length,
-      capital:     TOTAL_CAPITAL_USD,
+      capital:     demoBalance||0,
       totalRebates: 0,
     };
   };
@@ -2967,7 +3015,9 @@ export default function PolydeskV12() {
             <div style={{display:"flex",alignItems:"center",gap:7,background:T.accentSoft,border:`1px solid ${T.accentBorder}`,borderRadius:8,padding:"5px 11px"}}>
               <span style={{fontSize:10,color:B.muted,letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:500}}>{T.balanceLabel}</span>
               <span className="num" style={{fontSize:13,fontWeight:700,color:T.accentText}}>
-                {mode==="live" ? fmt.usd(walletBalance??liveData?.portfolio?.total_capital??0) : fmt.usd(demoBalance)}
+                {mode==="live"
+                  ? fmt.usd(walletBalance??liveData?.portfolio?.total_capital??0)
+                  : fmt.usd((demoBalance||0) + (allTrades.filter(t=>t.pnl!=null&&t.status!=="open").reduce((s,t)=>s+(t.pnl||0),0)))}
               </span>
               {mode==="demo"&&<span style={{fontSize:9,background:B.blueSoft,color:B.blue,borderRadius:4,padding:"1px 5px",fontWeight:700,letterSpacing:"0.05em"}}>PAPER</span>}
               {mode==="live"&&dataLoading&&<span style={{fontSize:10,color:B.amber,animation:"pulse 1s infinite"}}>↻</span>}
@@ -2976,7 +3026,7 @@ export default function PolydeskV12() {
               <span style={{fontSize:10,color:B.muted}}>Rate</span>
               <span className="num" style={{fontSize:12,fontWeight:600,color:rate>420?B.red:rate>320?B.amber:B.green}}>{rate}<span style={{color:B.dim,fontWeight:400}}>/500</span></span>
             </div>
-            <ModeSwitch mode={mode} onChange={setMode}/>
+            <ModeSwitch mode={mode} onChange={handleModeChange}/>
           </div>
         </header>
 
@@ -3015,10 +3065,14 @@ export default function PolydeskV12() {
                   {label:"Total Trades", value: totalTrades.toString(),
                                          sub: mode==="demo" ? "Paper trades executed" : "Executed this session",
                                          color: B.amber, spark:false},
-                  {label:"Capital",
-                   value: mode==="live" ? `$${(portfolio.capital||TOTAL_CAPITAL_USD).toLocaleString()}` : `$${TOTAL_CAPITAL_USD.toLocaleString()} sim`,
-                   sub: mode==="live" ? "Deployed capital" : "Simulated · not at risk",
-                   color: mode==="demo" ? B.amber : T.accentText, spark:false},
+                  {label:"Balance",
+                   value: (() => {
+                     const pnl = allTrades.filter(t=>t.pnl!=null&&t.status!=="open").reduce((s,t)=>s+(t.pnl||0),0);
+                     const bal = mode==="live" ? (walletBalance??0) : (demoBalance||0)+pnl;
+                     return fmt.usd(bal);
+                   })(),
+                   sub: mode==="live" ? "Real USDC on Polygon" : demoBalance>0 ? "Paper balance + P&L" : "Set balance in Funds tab",
+                   color: mode==="demo" ? T.accentText : B.green, spark:false},
                 ].map((k,i)=>(
                   <Card key={i} style={{padding:"18px 20px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
@@ -3634,7 +3688,7 @@ export default function PolydeskV12() {
           )}
 
           {/* ── FUNDS ── */}
-          {page==="funds"&&(<div className="in"><FundsTab mode={mode} demoBalance={demoBalance} setDemoBalance={setDemoBalance} demoTxns={demoTxns} setDemoTxns={setDemoTxns} demoAllocated={demoAllocated} walletBalance={walletBalance} walletAddress={walletAddress} liveData={liveData} botsRegistry={botsRegistry} botAllocations={botAllocations} setBotAllocations={setBotAllocations}/></div>)}
+          {page==="funds"&&(<div className="in"><FundsTab mode={mode} demoBalance={demoBalance} setDemoBalance={setDemoBalance} demoTxns={demoTxns} setDemoTxns={setDemoTxns} demoAllocated={demoAllocated} walletBalance={walletBalance} walletAddress={walletAddress} liveData={liveData} botsRegistry={botsRegistry} botAllocations={botAllocations} setBotAllocations={setBotAllocations} onResetAll={()=>setResetConfirm(true)}/></div>)}
 
           {/* ── STRATEGIES ── */}
           {page==="strategies"&&(
@@ -4920,6 +4974,88 @@ export default function PolydeskV12() {
           existingIds={botsRegistry.map(b=>b.id)}
         />
       )}
+      {/* ── LIVE WALLET MODAL ── */}
+      {liveWalletModal&&(
+        <>
+          <div onClick={()=>setLiveWalletModal(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:500}}/>
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:501,width:420,background:B.surf,border:`1px solid ${B.greenBorder}`,borderRadius:16,padding:"28px 32px",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}>
+            <div style={{marginBottom:6,fontSize:11,color:B.green,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>🟢 Switch to Live Mode</div>
+            <div style={{fontSize:16,fontWeight:700,color:B.text,marginBottom:8}}>Connect your Polymarket wallet</div>
+            <div style={{fontSize:12,color:B.muted,marginBottom:20,lineHeight:1.6}}>Enter your Polygon wallet address (0x...) to fetch your real USDC balance and trade history.</div>
+            <input
+              value={liveWalletInput}
+              onChange={e=>setLiveWalletInput(e.target.value)}
+              placeholder="0x... your Polymarket wallet address"
+              style={{width:"100%",background:B.surf2,border:`1px solid ${B.border}`,borderRadius:8,padding:"10px 13px",fontSize:12,color:B.text,outline:"none",fontFamily:"'JetBrains Mono',monospace",boxSizing:"border-box",marginBottom:12}}
+            />
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setLiveWalletModal(false)}
+                style={{flex:1,padding:"10px",borderRadius:8,fontSize:12,fontWeight:600,background:B.surf2,border:`1px solid ${B.border}`,color:B.muted,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                Cancel
+              </button>
+              <button
+                disabled={!liveWalletInput.startsWith("0x")||liveWalletInput.length<20}
+                onClick={async()=>{
+                  setWalletAddress(liveWalletInput);
+                  await fetchWalletBalance(liveWalletInput);
+                  setLiveWalletModal(false);
+                  setMode("live");
+                }}
+                style={{flex:2,padding:"10px",borderRadius:8,fontSize:12,fontWeight:700,background:liveWalletInput.startsWith("0x")&&liveWalletInput.length>=20?B.greenSoft:B.surf2,border:`1px solid ${liveWalletInput.startsWith("0x")&&liveWalletInput.length>=20?B.green:B.border}`,color:liveWalletInput.startsWith("0x")&&liveWalletInput.length>=20?B.green:B.muted,cursor:liveWalletInput.startsWith("0x")&&liveWalletInput.length>=20?"pointer":"not-allowed",fontFamily:"'Outfit',sans-serif"}}>
+                Connect & Go Live →
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── ALLOCATION CONFIRM DIALOG ── */}
+      {allocConfirm&&(
+        <>
+          <div onClick={()=>setAllocConfirm(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(4px)",zIndex:500}}/>
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:501,width:380,background:B.surf,border:`1px solid ${B.border}`,borderRadius:14,padding:"24px 28px",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+            <div style={{fontSize:14,fontWeight:700,color:B.text,marginBottom:8}}>Change Allocation?</div>
+            <div style={{fontSize:12,color:B.muted,marginBottom:20,lineHeight:1.6}}>
+              Changing <strong style={{color:B.text}}>{allocConfirm.botName}</strong> allocation from{" "}
+              <span style={{color:B.amber,fontWeight:700}}>${allocConfirm.oldAmt.toLocaleString()}</span> to{" "}
+              <span style={{color:B.green,fontWeight:700}}>${allocConfirm.newAmt.toLocaleString()}</span>.
+              {allocConfirm.newAmt===0&&<span style={{color:B.red,display:"block",marginTop:6}}>⚠ Setting to $0 will stop this bot from trading.</span>}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setAllocConfirm(null)}
+                style={{flex:1,padding:"10px",borderRadius:8,fontSize:12,fontWeight:600,background:B.surf2,border:`1px solid ${B.border}`,color:B.muted,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                Cancel
+              </button>
+              <button onClick={()=>{allocConfirm.onConfirm();setAllocConfirm(null);}}
+                style={{flex:1,padding:"10px",borderRadius:8,fontSize:12,fontWeight:700,background:B.greenSoft,border:`1px solid ${B.greenBorder}`,color:B.green,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── RESET CONFIRM DIALOG ── */}
+      {resetConfirm&&(
+        <>
+          <div onClick={()=>setResetConfirm(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",zIndex:500}}/>
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:501,width:360,background:B.surf,border:`1px solid ${B.red}40`,borderRadius:14,padding:"24px 28px",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+            <div style={{fontSize:14,fontWeight:700,color:B.red,marginBottom:8}}>🗑 Reset All Data?</div>
+            <div style={{fontSize:12,color:B.muted,marginBottom:20,lineHeight:1.6}}>This will clear your paper balance, transaction history, and bot allocations. Trade records in Supabase are preserved.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setResetConfirm(false)}
+                style={{flex:1,padding:"10px",borderRadius:8,fontSize:12,fontWeight:600,background:B.surf2,border:`1px solid ${B.border}`,color:B.muted,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                Cancel
+              </button>
+              <button onClick={async()=>{await handleResetAll();setResetConfirm(false);}}
+                style={{flex:1,padding:"10px",borderRadius:8,fontSize:12,fontWeight:700,background:B.redSoft,border:`1px solid ${B.red}50`,color:B.red,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                Yes, Reset
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {lbCopyModal&&(
         <CopyConfigModal
           trader={lbCopyModal}
