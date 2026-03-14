@@ -144,7 +144,7 @@ class BotState:
     winning_trades:     int   = 0
     open_positions:     list  = field(default_factory=list)
     trade_history:      list  = field(default_factory=list)
-    paper_balance:      float = 351.0
+    paper_balance:      float = 0.0
     scan_count:         int   = 0
     started_at:         str   = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -162,11 +162,33 @@ class BotState:
             with open(cls.STATE_PATH) as f:
                 data = json.load(f)
                 state = cls(**{k: v for k,v in data.items() if k in cls.__dataclass_fields__})
-                log.info(f"Loaded existing state: {state.total_trades} trades, P&L ${state.total_paper_pnl:.2f}")
+                # If balance is 0, try to pull from Supabase allocations
+                if state.paper_balance == 0.0:
+                    state.paper_balance = cls._read_capital_from_allocations()
+                log.info(f"Loaded state: {state.total_trades} trades, P&L ${state.total_paper_pnl:.2f}, balance ${state.paper_balance:.2f}")
                 return state
         except (FileNotFoundError, AttributeError):
-            log.info("No existing state found — starting fresh")
-            return cls()
+            log.info("No existing state — reading capital from allocations")
+            s = cls()
+            s.paper_balance = cls._read_capital_from_allocations()
+            return s
+
+    @classmethod
+    def _read_capital_from_allocations(cls) -> float:
+        """Pull bond_bot capital from Supabase allocations (set via dashboard button)."""
+        try:
+            from polydesk_db import PolydeskDB
+            db = PolydeskDB()
+            allocs = db.get_allocations()
+            total = float(os.environ.get("TOTAL_CAPITAL_USD", 450))
+            val = float(allocs.get("bond_bot", 0))
+            # Handle both fraction (0.78) and dollar (351.0) formats
+            capital = val if val > 1.0 else val * total
+            log.info(f"Capital from allocations: ${capital:.2f}")
+            return capital
+        except Exception as e:
+            log.warning(f"Could not read allocations ({e}) — balance stays $0 until set via dashboard")
+            return 0.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
