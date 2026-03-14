@@ -1,0 +1,6 @@
+aiohttp==3.9.3
+websockets>=15.0.0
+supabase>=2.28.0
+py-clob-client==0.34.6
+requests==2.31.0
+

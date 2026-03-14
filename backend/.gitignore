@@ -1,0 +1,9 @@
+.env
+*.pyc
+__pycache__/
+state/
+commands/
+logs/
+*.log
+*.backup.*
+test_bot/

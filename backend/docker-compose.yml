@@ -1,0 +1,82 @@
+version: "3.9"
+
+networks:
+  polydesk:
+    driver: bridge
+
+volumes:
+  state:
+  commands:
+  logs:
+
+services:
+
+  bond_bot:
+    build: ./bond_bot
+    container_name: polydesk-bond
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
+
+  rebates_bot:
+    build: ./rebates_bot
+    container_name: polydesk-rebates
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
+
+  btc5m_bot:
+    build: ./btc5m_bot
+    container_name: polydesk-btc5m
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
+
+  copier_bot:
+    build: ./copier_bot
+    container_name: polydesk-copier
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
+
+
+  orchestrator:
+    build: ./orchestrator
+    container_name: polydesk-orchestrator
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
+    expose: ["8765"]
+
+  nginx:
+    image: nginx:alpine
+    container_name: polydesk-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on: [orchestrator]
+    networks: [polydesk]

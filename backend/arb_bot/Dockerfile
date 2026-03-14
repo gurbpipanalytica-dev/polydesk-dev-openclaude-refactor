@@ -1,0 +1,8 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY *.py .
+RUN mkdir -p /app/state /app/commands /app/logs
+CMD ["python", "-u", "polydesk_arb_bot.py"]
+
