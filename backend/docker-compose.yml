@@ -56,6 +56,16 @@ services:
     networks: [polydesk]
 
 
+  arb_bot:
+    build: ./arb_bot
+    container_name: polydesk-arb
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - state:/app/state
+      - commands:/app/commands
+      - logs:/app/logs
+    networks: [polydesk]
   orchestrator:
     build: ./orchestrator
     container_name: polydesk-orchestrator
