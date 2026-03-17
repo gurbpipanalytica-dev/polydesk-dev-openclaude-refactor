@@ -15,7 +15,8 @@ from flask import Flask, request, jsonify
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 ORCHESTRATOR_INTERVAL = 300
-TOTAL_CAPITAL_USD     = float(os.environ.get("TOTAL_CAPITAL_USD", 450))
+# Capital is dynamic — set via .env or dashboard. No hardcoded default.
+TOTAL_CAPITAL_USD     = float(os.environ.get("TOTAL_CAPITAL_USD", 0))
 API_PORT              = 8765
 STATE_DIR             = Path("/app/state")
 COMMANDS_DIR          = Path("/app/commands")
@@ -140,7 +141,7 @@ def run_ai_cycle():
     markets   = fetch_markets()
 
     system = """You are the Polydesk AI orchestrator managing a Polymarket trading operation.
-Capital: $450 total. Bond Bot (78%), Rebates Bot (22%), BTC5M (paper only).
+Analyze capital allocation from portfolio data. Do not assume a fixed total — read actual deployed amounts.
 Respond ONLY in valid JSON with keys: assessment, risk_level, decisions, opportunities, alert."""
 
     user_msg = f"""Portfolio: {json.dumps(portfolio, indent=2)}

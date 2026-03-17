@@ -64,7 +64,8 @@ MAX_POSITION_SIZE_USD   = 500.0     # max USDC per trade in paper mode
 MAX_POSITION_SIZE_LIVE  = 80.0      # $80/trade max — conservative with $351 capital
 MAX_OPEN_POSITIONS      = 4         # max 4 positions = $320 max deployed
 # FIX: Total capital hard limit — prevents over-deployment in paper mode
-MAX_TOTAL_DEPLOYED_USD  = float(os.environ.get("TOTAL_CAPITAL_USD", 450))
+# Total capital — reads from .env, no hardcoded default
+MAX_TOTAL_DEPLOYED_USD  = float(os.environ.get("TOTAL_CAPITAL_USD", 0))
 STOP_LOSS_PRICE         = 0.80      # exit if drops below this
 KELLY_FRACTION          = 0.25      # 25% Kelly — conservative sizing
 
@@ -182,7 +183,7 @@ class BotState:
             from polydesk_db import PolydeskDB
             db = PolydeskDB()
             allocs = db.get_allocations()
-            total = float(os.environ.get("TOTAL_CAPITAL_USD", 450))
+            total = float(os.environ.get("TOTAL_CAPITAL_USD", 0))
             val = float(allocs.get("bond_bot", 0))
             # Handle both fraction (0.78) and dollar (351.0) formats
             capital = val if val > 1.0 else val * total
