@@ -667,6 +667,9 @@ class Executor:
         self.total_fills:      int   = 0
         self.total_rebates:    float = 0.0
         self._client = None
+        # FIX: Dedup guard — prevent placing same trade multiple times
+        self._recent_trade_keys: dict = {}  # {market_id+side: timestamp}
+        self._trade_cooldown_sec: int = 120  # 2-min cooldown between trades on same market
         if LIVE_MODE:
             self._init_live_client()
 
@@ -697,8 +700,16 @@ class Executor:
         return open_count < MAX_CONCURRENT_POSITIONS and daily_loss < MAX_DAILY_LOSS_USD
 
     def already_in_market(self, market_id: str) -> bool:
-        return any(p.market_id == market_id and p.status == "open"
-                   for p in self.open_positions)
+        # Check open positions
+        if any(p.market_id == market_id and p.status == "open"
+               for p in self.open_positions):
+            return True
+        # FIX: Check cooldown — prevent rapid re-entry after close
+        import time as _time
+        last_trade = self._recent_trade_keys.get(market_id, 0)
+        if _time.time() - last_trade < self._trade_cooldown_sec:
+            return True
+        return False
 
     async def enter(self, market: Market5m, signal: dict,
                     session: aiohttp.ClientSession) -> Optional[Position]:
@@ -733,6 +744,10 @@ class Executor:
         else:
             log.info(f"📄 PAPER limit: {side} ${size_usd:.0f} @ {limit_price:.3f} | {method}")
             log.info(f"   {signal['reason']}")
+
+        # FIX: Record trade time for dedup cooldown
+        import time as _time
+        self._recent_trade_keys[market.condition_id] = _time.time()
 
         pos = Position(
             market_id   = market.condition_id,
