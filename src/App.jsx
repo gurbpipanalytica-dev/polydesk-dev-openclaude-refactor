@@ -4,6 +4,7 @@ import { fmt } from "./utils/format";
 import { wsService } from "./services/WebSocketService";
 import { useNotifications } from "./hooks/useNotifications";
 import ToastContainer from "./components/ToastContainer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import useBots from "./hooks/useBots";
 import useTrades from "./hooks/useTrades";
 import useTheme from "./hooks/useTheme";
@@ -149,53 +150,65 @@ export default function PolydeskV12() {
     }
   };
 
-  // Render active tab
+  // Render active tab with ErrorBoundary
   const renderActiveTab = () => {
     switch (page) {
       case "overview":
         return (
-          <OverviewTab
-            theme={B}
-            bots={botsRegistry}
-            trades={allTrades}
-            botAllocations={botAllocations}
-            availableBalance={availableBalance}
-            demoBalance={demoBalance}
-            mode={mode}
-          />
+          <ErrorBoundary theme={B}>
+            <OverviewTab
+              theme={B}
+              bots={botsRegistry}
+              trades={allTrades}
+              botAllocations={botAllocations}
+              availableBalance={availableBalance}
+              demoBalance={demoBalance}
+              mode={mode}
+            />
+          </ErrorBoundary>
         );
       case "trades":
         return (
-          <TradesTab
-            theme={B}
-            trades={allTrades}
-            period={period}
-            setPeriod={setPeriod}
-            buildChartData={buildChartData}
-            buildMeta={buildMeta}
-            buildCategories={buildCategories}
-            fmt={fmt}
-          />
+          <ErrorBoundary theme={B}>
+            <TradesTab
+              theme={B}
+              trades={allTrades}
+              period={period}
+              setPeriod={setPeriod}
+              buildChartData={buildChartData}
+              buildMeta={buildMeta}
+              buildCategories={buildCategories}
+              fmt={fmt}
+            />
+          </ErrorBoundary>
         );
       case "strategies":
         return (
-          <StrategiesTab
-            theme={B}
-            bots={botsRegistry}
-            trades={allTrades}
-            botAllocations={botAllocations}
-          />
+          <ErrorBoundary theme={B}>
+            <StrategiesTab
+              theme={B}
+              bots={botsRegistry}
+              trades={allTrades}
+              botAllocations={botAllocations}
+            />
+          </ErrorBoundary>
         );
       case "copier":
-        return <CopierTab theme={B} trades={allTrades} />;
+        return (
+          <ErrorBoundary theme={B}>
+            <CopierTab theme={B} trades={allTrades} />
+          </ErrorBoundary>
+        );
       case "settings":
         return (
-          <SettingsTab
-            theme={B}
-            setTheme={(newTheme) => {
-              setDarkMode(newTheme === DARK);
-            }}
-          />
+          <ErrorBoundary theme={B}>
+            <SettingsTab
+              theme={B}
+              setTheme={(newTheme) => {
+                setDarkMode(newTheme === DARK);
+              }}
+            />
+          </ErrorBoundary>
         );
       default:
         return <div>Select a tab</div>;
