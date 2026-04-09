@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { DARK, LIGHT, THEMES } from "./constants/themes";
 import { fmt } from "./utils/format";
 import { wsService } from "./services/WebSocketService";
+import { useNotifications } from "./hooks/useNotifications";
+import ToastContainer from "./components/ToastContainer";
 import useBots from "./hooks/useBots";
 import useTrades from "./hooks/useTrades";
 import useTheme from "./hooks/useTheme";
@@ -50,6 +52,9 @@ export default function PolydeskV12() {
   const B = darkMode ? DARK : LIGHT;
   const T = THEMES[mode];
 
+  // Notification system
+  const { toasts, notify, success, error, warning, info, remove } = useNotifications();
+  
   // Use custom hooks
   const {
     botsRegistry,
@@ -97,17 +102,26 @@ export default function PolydeskV12() {
       }
     });
     
-    // Subscribe to price updates
-    const unsubscribePrices = wsService.subscribe('prices', (data) => {
-      if (data.type === 'price_update') {
-        setLastPriceUpdate(data.symbol + ': ' + data.data.price.toFixed(2));
-      }
-    });
-    
-    return () => {
-      unsubscribeStatus();
-      unsubscribePrices();
-    };
+  // Subscribe to price updates
+  const unsubscribePrices = wsService.subscribe('prices', (data) => {
+    if (data.type === 'price_update') {
+      setLastPriceUpdate(data.symbol + ': ' + data.data.price.toFixed(2));
+    }
+  });
+  
+  // Subscribe to trade updates
+  const unsubscribeTrades = wsService.subscribe('trades', (data) => {
+    if (data.type === 'trade_executed') {
+      setLastTrade(data.data);
+      success(`🎉 New trade: ${data.data.type} ${data.data.symbol} @ ${fmt.short(data.data.price)}`);
+    }
+  });
+
+  return () => {
+    unsubscribeStatus();
+    unsubscribePrices();
+    unsubscribeTrades();
+  };
   }, []);
 
   // Event handlers
@@ -272,7 +286,31 @@ export default function PolydeskV12() {
           {T.balanceLabel}: {fmt.short(mode === "demo" ? demoBalance : 0)}
         </div>
       </div>
-      </header>
+      
+      <button
+        onClick={() => {
+          info("Info: This is an informational toast");
+          setTimeout(() => warning("Warning: Connection may be unstable", 3000), 300);
+          setTimeout(() => error("Error: Failed to connect to exchange", 3000), 600);
+          setTimeout(() => success("Success: Trade executed successfully"), 900);
+        }}
+        style={{
+          position: 'fixed',
+          top: '24px',
+          right: '120px',
+          padding: "8px 16px",
+          borderRadius: "8px",
+          background: T.accentSoft,
+          border: `1px solid ${T.accentBorder}`,
+          color: T.accentText,
+          fontWeight: "500",
+          cursor: "pointer",
+          zIndex: 1001,
+        }}
+      >
+        Test Toasts
+      </button>
+    </header>
 
       {/* Navigation */}
       <nav
@@ -313,6 +351,9 @@ export default function PolydeskV12() {
 
       {/* Main Content */}
       <main style={{ padding: "24px" }}>{renderActiveTab()}</main>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={remove} theme={B} />
 
       {/* Modals */}
       {selectedBot && (
