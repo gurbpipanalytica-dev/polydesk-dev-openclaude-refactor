@@ -14,6 +14,7 @@ import { useTheme } from "./hooks/useTheme";
 import OverviewTab from "./components/OverviewTab";
 import TradesTab from "./components/TradesTab";
 import StrategiesTab from "./components/StrategiesTab";
+import PerformanceDashboard from "./components/PerformanceDashboard";
 import CopierTab from "./components/CopierTab";
 import SettingsTab from "./components/SettingsTab";
 
@@ -205,12 +206,18 @@ export default function PolydeskV12() {
             />
           </ErrorBoundary>
         );
-      case "copier":
-        return (
-          <ErrorBoundary theme={B}>
-            <CopierTab theme={B} trades={allTrades} />
-          </ErrorBoundary>
-        );
+        case "copier":
+          return (
+            <ErrorBoundary theme={B}>
+              <CopierTab theme={B} trades={allTrades} />
+            </ErrorBoundary>
+          );
+        case "performance":
+          return (
+            <ErrorBoundary theme={B}>
+              <PerformanceDashboard theme={B} />
+            </ErrorBoundary>
+          );
       case "settings":
         return (
           <ErrorBoundary theme={B}>
@@ -396,10 +403,11 @@ export default function PolydeskV12() {
           gap: "8px",
         }}
       >
-        {[
+        {[  
           { key: "overview", label: "Overview", icon: "📊" },
           { key: "trades", label: "Trades", icon: "💹" },
           { key: "strategies", label: "Strategies", icon: "🎯" },
+          { key: "performance", label: "Performance", icon: "📈" },
           { key: "copier", label: "Copy Trading", icon: "🐋" },
           { key: "settings", label: "Settings", icon: "⚙️" },
         ].map((tab) => (
