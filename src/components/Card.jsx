@@ -29,14 +29,7 @@ const Card = ({ children, theme, style = {}, variant = 'default' }) => {
     ...style,
   };
 
-  return <div style={cardStyle}>{children}</div>;
+return <div style={cardStyle}>{children}</div>;
 };
-
-declare module 'react' {
-  interface CSSProperties {
-    // Allow CSS custom properties
-    [key: `--${string}`]: string | number;
-  }
-}
 
 export default Card;

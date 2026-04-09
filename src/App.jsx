@@ -5,9 +5,10 @@ import { wsService } from "./services/WebSocketService";
 import { useNotifications } from "./hooks/useNotifications";
 import ToastContainer from "./components/ToastContainer";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { usePWA } from "./hooks/usePWA";
 import useBots from "./hooks/useBots";
 import useTrades from "./hooks/useTrades";
-import useTheme from "./hooks/useTheme";
+import { useTheme } from "./hooks/useTheme";
 
 // Import all tab components
 import OverviewTab from "./components/OverviewTab";
@@ -52,6 +53,17 @@ export default function PolydeskV12() {
   // Theme tokens
   const B = darkMode ? DARK : LIGHT;
   const T = THEMES[mode];
+
+  // PWA controls
+  const { 
+    isInstalled, 
+    installPrompt, 
+    isOfflineReady,
+    updateAvailable,
+    installPWA,
+    update: skipWaiting,
+    getStatus
+  } = usePWA();
 
   // Notification system
   const { toasts, notify, success, error, warning, info, remove } = useNotifications();
@@ -260,6 +272,34 @@ export default function PolydeskV12() {
 
       <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* PWA Install Button */}
+          {installPrompt && !isInstalled && (
+            <button
+              onClick={installPWA}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                background: T.accentSoft,
+                border: `1px solid ${T.accentBorder}`,
+                color: T.accentText,
+                fontSize: "12px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              📱 Install App
+            </button>
+          )}
+          
+          {/* PWA Status */}
+          {isInstalled && (
+            <div style={{ color: '#10b981', fontSize: "12px", fontWeight: "500" }}>
+              📱 Installed
+            </div>
+          )}
+        </div>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div 
             style={{ 
               width: "8px", 
@@ -300,11 +340,32 @@ export default function PolydeskV12() {
         </div>
       </div>
       
+      {updateAvailable && (
+        <button
+          onClick={skipWaiting}
+          style={{
+            position: 'fixed',
+            top: '24px',
+            right: '220px',
+            padding: "8px 16px",
+            borderRadius: "8px",
+            background: '#f59e0b',
+            border: `1px solid #d97706`,
+            color: '#fff',
+            fontWeight: "500",
+            cursor: "pointer",
+            zIndex: 1001,
+          }}
+        >
+          🔄 Update Available
+        </button>
+      )}
+
       <button
         onClick={() => {
           info("Info: This is an informational toast");
           setTimeout(() => warning("Warning: Connection may be unstable", 3000), 300);
-          setTimeout(() => error("Error: Failed to connect to exchange", 3000), 600);
+          setTimeout(() => error("Error: Failed to connect to exchange", 3003), 600);
           setTimeout(() => success("Success: Trade executed successfully"), 900);
         }}
         style={{
