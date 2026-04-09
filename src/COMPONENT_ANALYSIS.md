@@ -1,182 +1,195 @@
-# App.jsx Structure Analysis
+# Polydesk Component Architecture Analysis
 
-## File Overview
-**File:** `/src/App.jsx`
-**Size:** 336KB, 5072 lines
-**Main Component:** `PolydeskV12()` (line 2241)
-
-## Extractable Components
-
-### 1. ChartTip (line 213)
-- **Purpose:** Custom tooltip for charts
-- **Props:** `active`, `payload`, `label`
-
-### 2. StatusBadge (line 228)
-- **Purpose:** Display bot/status badges with colors
-- **Props:** `status`
-
-### 3. Sparkline (line 246)
-- **Purpose:** Mini SVG sparkline chart
-- **Props:** `positive`
-
-### 4. Card (line 255)
-- **Purpose:** Card container with theming
-- **Props:** `children`, `style`
-
-### 5. CardHeader (line 264)
-- **Purpose:** Card header with title and subtitle
-- **Props:** `title`, `sub`, `right`
-
-### 6. PeriodSelector (line 280)
-- **Purpose:** Period selector buttons (1D, 7D, 1M, 3M, ALL, Custom)
-- **Props:** `period`, `setPeriod`, `customRange`, `setCustomRange`
-
-### 7. Popup (line ~302)
-- **Purpose:** Modal popup component
-
-### 8. Header
-- **Purpose:** Top header with logo, stats, mode switcher
-- **Features:** Balance display, uptime, mode (demo/live), settings
-
-### 9. OverviewTab
-- **Purpose:** Main dashboard overview
-- **Features:** Chart, P&L summary, bot cards grid, allocations, top trades
-
-### 10. BotCard
-- **Purpose:** Individual bot display card
-- **Props:** bot info (name, status, pnl, trades)
-
-### 11. TradesTab
-- **Purpose:** Trade history table
-- **Features:** Filters, search, pagination
-
-### 12. StrategiesTab
-- **Purpose:** Strategy roadmaps and details
-- **Features:** Tiered strategy display, ROI estimates
-
-### 13. CopierTab
-- **Purpose:** Whale copy trading interface
-- **Features:** Tracked wallets, copy controls
-
-### 14. SettingsTab
-- **Purpose:** Configuration and settings
-- **Features:** Parameter inputs, toggles
-
-### 15. CommandPanel
-- **Purpose:** Send commands to bots
-- **Features:** Start, stop, pause, set allocation
-
-### 16. BotDetailDrawer
-- **Purpose:** Individual bot detail view
-- **Features:** Metrics, parameters, controls
-
-### 17. StrategyDetailDrawer
-- **Purpose:** Strategy information and allocation
-
-### 18. AllocationsPanel
-- **Purpose:** Bot allocation management
-- **Features:** Capital allocation sliders, confirm dialog
-
-## Main State Variables (in PolydeskV12)
-
-```javascript
-// Mode & UI
-const [mode, setMode] = useState("demo");
-const [page, setPage] = useState("overview");
-const [period, setPeriod] = useState("1M");
-
-// Bot Management
-const [botsRegistry, setBotsRegistry] = useState([...BOTS]);
-const [botAllocations, setBotAllocations] = useState({1:0, 2:0, 3:0, 4:0, 5:0});
-const [selectedBot, setBot] = useState(null);
-
-// Trading Data
-const [allTrades, setAllTrades] = useState([]);
-const [tradesLoading, setTradesLoading] = useState(false);
-
-// Theme
-const [darkMode, setDarkMode] = useState(true);
-const B = darkMode ? DARK : LIGHT; // theme colors
-const T = THEMES[mode]; // mode theme
-
-// Modals
-const [liveWalletModal, setLiveWalletModal] = useState(false);
-const [allocConfirm, setAllocConfirm] = useState(null);
-```
-
-## Main UI Sections
-
-### Header (line ~325-450)
-- Logo, title
-- Stats (live bots, P&L, uptime)
-- Mode switcher (demo/live)
-- Settings button
-
-### Main Tabs (line ~450-700)
-1. **Overview** - Dashboard with charts, bot cards, P&L
-2. **Trades** - Trade history table
-3. **Strategies** - Strategy roadmap and details
-4. **Copier** - Whale copy trading
-5. **Settings** - Configuration
-
-### Sub-Components (spread throughout)
-- TopTrades panel
-- Heatmap chart
-- P&L chart
-- Rebate markets table
-- Copy trading controls
-- Strategy details
-
-## Data Flow
-
-1. **Fetch trades:** `fetchAllTrades()` called on mount
-2. **Fetch bot state:** `fetchBotState()` for each bot
-3. **Commands:** User action → API call → bot state update
-4. **Auto-refresh:** 10-second refresh interval for trades
-
-## Key Functions
-
-- `fetchAllTrades()` - Get trade history
-- `fetchBotState()` - Get bot status
-- `sendCommand(bot, action, data)` - Send command to bot
-- `buildChartData()` - Process trade data for charts
-- `buildBotStats()` - Calculate bot statistics
-- `handleAllocation()` - Update bot allocations
-
-## File Configuration Sections
-
-Lines 10-99: Constants and configuration
-Lines 100-2240: Helper components and utilities
-Lines 2241-5072: Main PolydeskV12 component
+**Last Updated:** April 09, 2026
+**Current Status:** Phase 8.3 Complete - 20+ Components Extracted
 
 ---
 
-## Refactoring Strategy
+## App.jsx Current State
 
-### Phase 1: Extract User-Defined Components
-1. Move ChartTip, StatusBadge, Sparkline, Card, CardHeader to `/components/common/`
-2. Move PeriodSelector to `/components/controls/`
-3. Extract Header to `/components/layout/`
+**File:** `/src/App.jsx`
+**Current Size:** ~554 lines
+**Original Size:** ~4,739 lines (pre-refactor)
+**Reduction:** 88% (still needs further modularization)
 
-### Phase 2: Extract Tab Components
-1. Extract OverviewTab to `/components/tabs/`
-2. Extract TradesTab to `/components/tabs/`
-3. Extract StrategiesTab to `/components/tabs/`
-4. Extract CopierTab to `/components/tabs/`
-5. Extract SettingsTab to `/components/tabs/`
+**Current Responsibilities:**
+- App shell with routing
+- WebSocket connection management
+- PWA install/update prompts
+- Theme context provider
+- Toast notification container
+- Modal management (wallet, bot details)
 
-### Phase 3: Extract Shared Components
-1. Extract BotCard to `/components/bots/`
-2. Extract CommandPanel to `/components/bots/`
-3. Extract TradeTable to `/components/trades/`
+---
 
-### Phase 4: Create Custom Hooks
-1. `useBots()` - Manage bot registry and state
-2. `useTrades()` - Manage trade data
-3. `useTheme()` - Manage theme (already exists but extractable)
+## ✅ Extracted Components (Phase 1-5)
 
-### Phase 5: Reduce App.jsx
-Goal: Reduce from 5072 lines to <200 lines
-- Only keep routing logic
-- Delegate all rendering to components
-- Manage state with custom hooks
+### Foundation Components
+| Component | File | Props | Purpose |
+|-----------|------|-------|---------|
+| ChartTip | `components/ChartTip.jsx` | `active, payload, label` | Custom chart tooltips |
+| StatusBadge | `components/StatusBadge.jsx` | `status` | Bot/status badges |
+| Sparkline | `components/Sparkline.jsx` | `positive` | Mini SVG charts |
+| Card | `components/Card.jsx` | `children, style` | Glass-morphism container |
+| CardHeader | `components/CardHeader.jsx` | `title, sub, right` | Card headers |
+| PeriodSelector | `components/PeriodSelector.jsx` | `period, setPeriod` | Time period buttons |
+| Popup | `components/Popup.jsx` | `children, onClose` | Modal dialogs |
+
+### Feature Components
+| Component | File | Props | Purpose |
+|-----------|------|-------|---------|
+| BotCard | `components/BotCard.jsx` | `bot, theme, onClick` | Individual bot display |
+| CommandPanel | `components/CommandPanel.jsx` | `theme, onCommand` | Bot controls |
+| TradeTable | `components/TradeTable.jsx` | `trades, theme` | Trade history table |
+| AllocationsPanel | `components/AllocationsPanel.jsx` | `allocations, theme` | Capital allocation |
+
+### Tab Components
+| Component | File | Purpose |
+|-----------|------|---------|
+| OverviewTab | `components/OverviewTab.jsx` | Dashboard with charts |
+| TradesTab | `components/TradesTab.jsx` | Trade history view |
+| StrategiesTab | `components/StrategiesTab.jsx` | Strategy management |
+| CopierTab | `components/CopierTab.jsx` | Whale copy trading |
+| SettingsTab | `components/SettingsTab.jsx` | Configuration panel |
+
+---
+
+## ✅ Phase 8.1 Components (Real-Time Features)
+
+| Component | File | Purpose | Status |
+|-----------|------|---------|--------|
+| Toast | `components/Toast.jsx` | Notification display | ✅ Complete |
+| ToastContainer | `components/ToastContainer.jsx` | Toast manager | ✅ Complete |
+| ErrorBoundary | `components/ErrorBoundary.jsx` | Error isolation | ✅ Complete |
+
+### Hooks
+| Hook | File | Purpose | Status |
+|------|------|---------|--------|
+| useNotifications | `hooks/useNotifications.js` | Toast state | ✅ Complete |
+| useWebSocket | `hooks/useWebSocket.js` | WS connection | ✅ Complete |
+
+### Services
+| Service | File | Purpose | Status |
+|---------|------|---------|--------|
+| WebSocketService | `services/WebSocketService.js` | Real-time data | ✅ Complete |
+
+---
+
+## ✅ Phase 8.2 Components (PWA)
+
+| Component | File | Purpose | Status |
+|-----------|------|---------|--------|
+| usePWA | `hooks/usePWA.js` | PWA controls | ✅ Complete |
+
+### PWA Files
+- `public/manifest.json` - App manifest
+- `public/service-worker.js` - Offline caching
+
+---
+
+## ✅ Phase 8.3 Components (Advanced Features)
+
+| Component | File | Props | Purpose |
+|-----------|------|-------|---------|
+| Skeleton | `components/Skeleton.jsx` | `width, height` | Loading shimmer |
+| PerformanceChart | `components/PerformanceChart.jsx` | `data, type, theme` | Multi-type charts |
+| CandlestickChart | `components/CandlestickChart.jsx` | `data, theme` | OHLC charts |
+| PerformanceDashboard | `components/PerformanceDashboard.jsx` | `theme` | Analytics + export |
+
+### Zustand Stores
+| Store | File | Purpose | Status |
+|-------|------|---------|--------|
+| botStore | `stores/botStore.js` | Bot state + persistence | ✅ Complete |
+| tradeStore | `stores/tradeStore.js` | Trades + metrics | ✅ Complete |
+| settingsStore | `stores/settingsStore.js` | Config + wallets | ✅ Complete |
+
+### Utilities
+| Utility | File | Purpose |
+|---------|------|---------|
+| format | `utils/format.js` | Number/date formatting |
+| trades | `utils/trades.js` | Sample trade data |
+
+---
+
+## Custom Hooks Summary
+
+| Hook | File | Purpose | Phase |
+|------|------|---------|-------|
+| useBots | `hooks/useBots.js` | Bot registry management | 4 |
+| useTrades | `hooks/useTrades.js` | Trade data fetching | 4 |
+| useTheme | `hooks/useTheme.js` | Theme switching | 4 |
+| useNotifications | `hooks/useNotifications.js` | Toast system | 8.1 |
+| usePWA | `hooks/usePWA.js` | PWA install/update | 8.2 |
+| useWebSocket | `hooks/useWebSocket.js` | WebSocket connection | 8.1 |
+
+---
+
+## Current Architecture
+
+```
+src/
+├── App.jsx                    # App shell (554 lines)
+├── main.jsx                   # Entry point
+├── stores/                    # Zustand stores (NEW)
+│   ├── botStore.js           # Bot state
+│   ├── tradeStore.js         # Trade state
+│   └── settingsStore.js      # Settings state
+├── components/                # 20+ components
+│   ├── [foundation]          # Card, CardHeader, etc.
+│   ├── [features]            # BotCard, TradeTable, etc.
+│   ├── [tabs]                # OverviewTab, TradesTab, etc.
+│   ├── [phase8]              # Toast, Skeleton, Charts
+│   └── __tests__/            # Component tests
+├── hooks/                     # 6 custom hooks
+├── services/                  # WebSocket service
+├── utils/                     # format.js, trades.js
+└── constants/                 # themes.js
+```
+
+---
+
+## Remaining Technical Debt
+
+### App.jsx Still Needs Work
+**Current:** 554 lines
+**Target:** <200 lines
+
+**Still in App.jsx:**
+- Header UI (120 lines)
+- Navigation (40 lines)
+- Modal management (110 lines)
+- WebSocket subscription logic (40 lines)
+- PWA controls (30 lines)
+
+**Recommended Extraction:**
+1. `Layout/Header.jsx` - Header with PWA controls
+2. `Layout/Navigation.jsx` - Tab navigation
+3. `Modals/WalletModal.jsx` - Wallet connection
+4. `Modals/BotDetailModal.jsx` - Bot details
+5. `providers/AppProviders.jsx` - Context providers
+
+---
+
+## Phase 9+ Component Plans
+
+### Backend Standardization (Phase 9)
+No new frontend components
+
+### Testing Suite (Phase 10)
+```
+src/
+├── components/__tests__/
+│   ├── Toast.test.jsx        # To create
+│   ├── Skeleton.test.jsx     # To create
+│   ├── PerformanceChart.test.jsx  # To create
+│   └── [16 total test files] # Target: 80% coverage
+```
+
+### Enterprise Features (Phase 11-12)
+- `RiskDashboard.jsx` - Risk metrics display
+- `BacktestPanel.jsx` - Strategy backtesting
+- `TeamSettings.jsx` - Multi-user settings
+
+---
+
+*Last Updated: Phase 8.3 Complete | 20+ Components | 6 Hooks | 3 Stores*
