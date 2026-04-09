@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { DARK, LIGHT, THEMES } from "./constants/themes";
 import { fmt } from "./utils/format";
+import { wsService } from "./services/WebSocketService";
 import useBots from "./hooks/useBots";
 import useTrades from "./hooks/useTrades";
 import useTheme from "./hooks/useTheme";
@@ -82,6 +83,32 @@ export default function PolydeskV12() {
   // Derived values
   const totalAllocated = Object.values(botAllocations).reduce((sum, val) => sum + (val || 0), 0);
   const availableBalance = demoBalance - totalAllocated;
+  
+  // WebSocket state
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [lastPriceUpdate, setLastPriceUpdate] = useState(null);
+  
+  // WebSocket Integration - Subscribe to real-time data
+  useEffect(() => {
+    // Subscribe to system status
+    const unsubscribeStatus = wsService.subscribe('system', (data) => {
+      if (data.type === 'connection_status') {
+        setConnectionStatus(data.data.status);
+      }
+    });
+    
+    // Subscribe to price updates
+    const unsubscribePrices = wsService.subscribe('prices', (data) => {
+      if (data.type === 'price_update') {
+        setLastPriceUpdate(data.symbol + ': ' + data.data.price.toFixed(2));
+      }
+    });
+    
+    return () => {
+      unsubscribeStatus();
+      unsubscribePrices();
+    };
+  }, []);
 
   // Event handlers
   const handleModeChange = (newMode) => {
@@ -204,26 +231,47 @@ export default function PolydeskV12() {
           </span>
         </div>
 
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <button
-            onClick={() => handleModeChange(mode === "demo" ? "live" : "demo")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              background: T.accentSoft,
-              border: `1px solid ${T.accentBorder}`,
-              color: T.accentText,
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            Switch to {mode === "demo" ? "Live" : "Demo"}
-          </button>
-
-          <div style={{ color: B.subtext, fontSize: "14px" }}>
-            {T.balanceLabel}: {fmt.short(mode === "demo" ? demoBalance : 0)}
+      <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div 
+            style={{ 
+              width: "8px", 
+              height: "8px", 
+              borderRadius: "50%", 
+              background: connectionStatus === 'connected' ? '#10b981' : 
+                          connectionStatus === 'error' ? '#ef4444' : '#f59e0b',
+              boxShadow: connectionStatus === 'connected' ? '0 0 8px #10b981' : 'none'
+            }} 
+          />
+          <div style={{ color: B.subtext, fontSize: "12px" }}>
+            WebSocket: {connectionStatus}
           </div>
+          {lastPriceUpdate && (
+            <div style={{ color: B.muted, fontSize: "11px", marginLeft: "8px" }}>
+              {lastPriceUpdate}
+            </div>
+          )}
         </div>
+        
+        <button
+          onClick={() => handleModeChange(mode === "demo" ? "live" : "demo")}
+          style={{
+            padding: "8px 16px",
+            borderRadius: "8px",
+            background: T.accentSoft,
+            border: `1px solid ${T.accentBorder}`,
+            color: T.accentText,
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          Switch to {mode === "demo" ? "Live" : "Demo"}
+        </button>
+
+        <div style={{ color: B.subtext, fontSize: "14px" }}>
+          {T.balanceLabel}: {fmt.short(mode === "demo" ? demoBalance : 0)}
+        </div>
+      </div>
       </header>
 
       {/* Navigation */}
